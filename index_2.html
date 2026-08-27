@@ -1,0 +1,1296 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>บัญชีรายรับ-รายจ่าย</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%92%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@600;700&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --bg: #F4F6F1;
+    --surface: #FFFFFF;
+    --surface-alt: #E9F0E6;
+    --border: #D7E1D2;
+    --text: #16231C;
+    --text-muted: #5C6D60;
+    --accent: #1E6E5C;
+    --accent-soft: #E1F0EA;
+    --income: #2E7D5B;
+    --income-soft: #E3F3EA;
+    --expense: #BD5B36;
+    --expense-soft: #FBEAE2;
+    --saving: #A6791F;
+    --saving-soft: #F3ECD8;
+    --shadow-rgb: 22,35,28;
+    --radius: 14px;
+    --radius-sm: 9px;
+    /* validated categorical chart palette (dataviz skill reference palette, light) */
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --series-4: #eda100;
+    --series-5: #e87ba4;
+    --series-6: #008300;
+    --series-7: #4a3aa7;
+    --series-other: #9C9890;
+    --chart-grid: #e1e0d9;
+    --chart-axis: #c3c2b7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0E1712;
+      --surface: #16211B;
+      --surface-alt: #1C2A22;
+      --border: #2A3B31;
+      --text: #E7EFE8;
+      --text-muted: #93A79A;
+      --accent: #4FBF9C;
+      --accent-soft: #1B3A30;
+      --income: #5FCB94;
+      --income-soft: #173A29;
+      --expense: #E2895F;
+      --expense-soft: #3A2317;
+      --saving: #D9B15A;
+      --saving-soft: #332B16;
+      --shadow-rgb: 0,0,0;
+      /* validated categorical chart palette (dataviz skill reference palette, dark) */
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #c98500;
+      --series-5: #d55181;
+      --series-6: #008300;
+      --series-7: #9085e9;
+      --series-other: #6b6860;
+      --chart-grid: #2c2c2a;
+      --chart-axis: #383835;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Noto Sans Thai", "Leelawadee UI", "Segoe UI", sans-serif;
+    font-size: 15.5px;
+    line-height: 1.6;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .card, button { transition: box-shadow .15s ease, transform .1s ease, background-color .15s ease, border-color .15s ease; }
+  }
+
+  .app { max-width: 900px; margin: 0 auto; padding: 36px 20px 90px; }
+
+  .app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .app-header h1 {
+    font-family: "Kanit", "Noto Sans Thai", sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 4vw, 28px);
+    margin: 0 0 4px;
+    letter-spacing: .2px;
+    text-wrap: balance;
+  }
+  .app-header .subtitle { margin: 0; color: var(--text-muted); font-size: 14px; }
+
+  .header-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .save-status {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .save-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .save-dot.saved { background: var(--income); }
+  .save-dot.error, .save-dot.unavailable { background: var(--expense); }
+
+  .sync-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+  .import-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--saving-soft);
+    border: 1px solid var(--saving);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 13.5px;
+    margin-bottom: 18px;
+  }
+  .import-banner .actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgba(var(--shadow-rgb),.05), 0 10px 24px -16px rgba(var(--shadow-rgb),.35);
+  }
+
+  section { margin-bottom: 22px; }
+
+  .month-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .month-bar label { font-size: 13px; color: var(--text-muted); }
+  select#month-select {
+    font-family: inherit;
+    font-size: 14.5px;
+    font-weight: 600;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  @media (max-width: 420px) { .summary-grid { grid-template-columns: 1fr 1fr; } }
+  .summary-card { padding: 16px 18px; }
+  .summary-card .label {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: .3px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .summary-card .amount {
+    font-family: "Kanit", sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: .2px;
+  }
+  .summary-card .amount-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+  .swatch { width: 8px; height: 8px; border-radius: 2px; }
+  .summary-card.income .amount { color: var(--income); }
+  .summary-card.income .swatch { background: var(--income); }
+  .summary-card.expense .amount { color: var(--expense); }
+  .summary-card.expense .swatch { background: var(--expense); }
+  .summary-card.saving .amount { color: var(--saving); }
+  .summary-card.saving .swatch { background: var(--saving); }
+  .summary-card.balance .amount.negative { color: var(--expense); }
+  .summary-card.balance .amount.positive { color: var(--accent); }
+  .summary-card.balance .swatch { background: var(--accent); }
+
+  .meter-card { padding: 14px 18px 16px; }
+  .meter-track {
+    display: flex;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    overflow: hidden;
+    background: var(--surface-alt);
+    margin-top: 4px;
+  }
+  .meter-fill.income-fill { background: var(--income); height: 100%; }
+  .meter-fill.expense-fill { background: var(--expense); height: 100%; }
+  .meter-fill.saving-fill { background: var(--saving); height: 100%; }
+  .meter-legend {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+  .meter-legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+  .chart-card { padding: 18px 20px 20px; }
+  .chart-card h2 {
+    font-family: "Kanit", sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 2px;
+  }
+  .chart-card .chart-subtitle { margin: 0 0 14px; font-size: 12.5px; color: var(--text-muted); }
+  .chart-empty { text-align: center; padding: 22px 12px; color: var(--text-muted); font-size: 13.5px; }
+
+  .cat-chart-track {
+    display: flex;
+    gap: 2px;
+    width: 100%;
+    height: 22px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: var(--surface-alt);
+  }
+  .cat-seg { min-width: 2px; cursor: default; }
+  .cat-seg.cat-seg-other { background: var(--series-other); }
+  @media (prefers-reduced-motion: no-preference) { .cat-seg { transition: filter .1s ease; } }
+  .cat-seg:hover { filter: brightness(1.08); }
+
+  .cat-legend { margin-top: 14px; display: flex; flex-direction: column; gap: 9px; }
+  .cat-legend-row { display: flex; align-items: center; gap: 9px; font-size: 13.5px; }
+  .cat-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .cat-swatch.cat-swatch-other { background: var(--series-other); }
+  .cat-legend-name { flex: 1; color: var(--text); min-width: 0; overflow-wrap: break-word; }
+  .cat-legend-amount {
+    font-family: "Kanit", sans-serif;
+    font-weight: 600;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cat-legend-pct { font-family: inherit; font-weight: 500; color: var(--text-muted); }
+
+  .trend-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
+  .trend-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-muted); }
+  .trend-legend-item .swatch-line { width: 14px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+  .trend-svg-wrap { position: relative; width: 100%; }
+  .trend-svg-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .trend-gridline { stroke: var(--chart-grid); stroke-width: 1; }
+  .trend-gridline.trend-zeroline { stroke: var(--chart-axis); }
+  .trend-axis-label { fill: var(--text-muted); font-size: 10.5px; font-family: "Noto Sans Thai", sans-serif; }
+  .trend-line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .trend-dot { stroke: var(--surface); stroke-width: 2; }
+  .trend-endlabel { font-family: "Kanit", sans-serif; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; fill: var(--text); }
+  .trend-crosshair { stroke: var(--chart-axis); stroke-width: 1; stroke-dasharray: 2 3; pointer-events: none; }
+  .trend-hit { fill: transparent; cursor: crosshair; }
+  .trend-tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 12px;
+    box-shadow: 0 6px 18px -8px rgba(var(--shadow-rgb),.4);
+    white-space: nowrap;
+    transform: translate(-50%, -110%);
+    z-index: 5;
+  }
+  .trend-tooltip .tt-month { font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .trend-tooltip .tt-row { display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
+  .trend-tooltip .tt-row .tt-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .trend-tooltip .tt-row .tt-val { margin-left: auto; font-family: "Kanit", sans-serif; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+
+  .form-card, .list-card { padding: 20px 20px 22px; }
+  .form-card h2, .list-header h2 {
+    font-family: "Kanit", sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 14px;
+  }
+
+  .type-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+  .type-btn {
+    flex: 1;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .type-btn.active[data-type="expense"] { background: var(--expense-soft); border-color: var(--expense); color: var(--expense); }
+  .type-btn.active[data-type="income"] { background: var(--income-soft); border-color: var(--income); color: var(--income); }
+  .type-btn.active[data-type="saving"] { background: var(--saving-soft); border-color: var(--saving); color: var(--saving); }
+
+  .direction-toggle { display: flex; gap: 8px; margin: -6px 0 14px; }
+  .direction-btn {
+    flex: 1;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    border: 1.5px dashed var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .direction-btn.active { background: var(--saving-soft); border-style: solid; border-color: var(--saving); color: var(--saving); }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 12.5px; color: var(--text-muted); font-weight: 600; }
+  .field input {
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 9px 11px;
+    width: 100%;
+  }
+  .field input:focus, select:focus, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .amount-wrap { position: relative; }
+  .amount-wrap .baht-sign {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-weight: 600;
+    pointer-events: none;
+  }
+  .amount-wrap input { padding-left: 26px; font-variant-numeric: tabular-nums; }
+
+  .form-actions { display: flex; gap: 10px; margin-top: 16px; }
+  button.primary {
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 14.5px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  button.primary:hover { filter: brightness(1.06); }
+  button.ghost {
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 14.5px;
+    background: transparent;
+    color: var(--text-muted);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 18px;
+    cursor: pointer;
+  }
+
+  .list-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .list-count { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+  .table-wrap { overflow-x: auto; margin-top: 12px; }
+  table { width: 100%; border-collapse: collapse; min-width: 560px; }
+  thead th {
+    text-align: left;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: .3px;
+    padding: 0 10px 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  th.num, td.num { text-align: right; }
+  th.actions, td.actions { text-align: right; width: 1%; white-space: nowrap; }
+  tbody td { padding: 11px 10px; border-bottom: 1px solid var(--border); font-size: 14.5px; vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .badge.income { background: var(--income-soft); color: var(--income); }
+  .badge.expense { background: var(--expense-soft); color: var(--expense); }
+  .badge.saving { background: var(--saving-soft); color: var(--saving); }
+  .note-text { color: var(--text-muted); font-size: 13px; }
+  .amount-cell { font-family: "Kanit", sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .amount-cell.income { color: var(--income); }
+  .amount-cell.expense { color: var(--expense); }
+  .amount-cell.saving { color: var(--saving); }
+
+  .row-actions { display: inline-flex; gap: 6px; }
+  .icon-btn {
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    border-radius: 7px;
+    padding: 5px 9px;
+    cursor: pointer;
+  }
+  .icon-btn.danger { color: var(--expense); border-color: var(--expense); }
+  .icon-btn.confirm-yes { background: var(--expense); color: #fff; border-color: var(--expense); }
+  .icon-btn.confirm-yes.saving-confirm { background: var(--saving); border-color: var(--saving); }
+
+  .empty-state {
+    text-align: center;
+    padding: 34px 12px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .app-footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    margin-top: 26px;
+    line-height: 1.7;
+  }
+
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="app-header">
+    <div>
+      <h1>บัญชีรายรับ-รายจ่าย</h1>
+      <p class="subtitle">บันทึกรายรับ รายจ่าย และเงินเก็บ แล้วดูยอดคงเหลือและเงินเก็บสะสมได้ทันที</p>
+    </div>
+    <div class="header-actions">
+      <div class="save-status">
+        <span class="save-dot" id="save-dot"></span>
+        <span id="save-text">พร้อมใช้งาน</span>
+      </div>
+      <div class="sync-actions">
+        <button type="button" class="icon-btn" id="export-btn">ส่งออกข้อมูล (.json)</button>
+        <button type="button" class="icon-btn" id="import-btn">นำเข้าข้อมูล</button>
+        <input type="file" id="import-file" accept="application/json" hidden>
+      </div>
+    </div>
+  </header>
+
+  <div class="import-banner" id="import-banner" hidden>
+    <span id="import-banner-text"></span>
+    <span class="actions">
+      <button type="button" class="icon-btn" id="import-cancel-btn">ยกเลิก</button>
+      <button type="button" class="icon-btn confirm-yes saving-confirm" id="import-confirm-btn">ยืนยันนำเข้า</button>
+    </span>
+  </div>
+
+  <section class="summary">
+    <div class="month-bar">
+      <label for="month-select">แสดงข้อมูลของ</label>
+      <select id="month-select"></select>
+    </div>
+    <div class="summary-grid">
+      <div class="card summary-card income">
+        <div class="label"><span class="swatch"></span>รายรับ</div>
+        <div class="amount" id="sum-income">฿0</div>
+      </div>
+      <div class="card summary-card expense">
+        <div class="label"><span class="swatch"></span>รายจ่าย</div>
+        <div class="amount" id="sum-expense">฿0</div>
+      </div>
+      <div class="card summary-card saving">
+        <div class="label"><span class="swatch"></span>เงินเก็บสะสม</div>
+        <div class="amount" id="sum-saving-total">฿0</div>
+        <div class="amount-sub" id="sum-saving-month">±฿0 เดือนนี้</div>
+      </div>
+      <div class="card summary-card balance">
+        <div class="label"><span class="swatch"></span>คงเหลือใช้จ่ายได้</div>
+        <div class="amount" id="sum-balance">฿0</div>
+      </div>
+    </div>
+    <div class="card meter-card">
+      <div class="meter-track">
+        <div class="meter-fill income-fill" id="meter-income" style="width:34%"></div>
+        <div class="meter-fill expense-fill" id="meter-expense" style="width:33%"></div>
+        <div class="meter-fill saving-fill" id="meter-saving" style="width:33%"></div>
+      </div>
+      <div class="meter-legend">
+        <span id="meter-income-label">รายรับ 0%</span>
+        <span id="meter-expense-label">รายจ่าย 0%</span>
+        <span id="meter-saving-label">เงินเก็บ 0%</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="chart-card card">
+    <h2>รายจ่ายตามหมวดหมู่</h2>
+    <p class="chart-subtitle">สัดส่วนรายจ่ายของช่วงเวลาที่เลือกไว้ด้านบน เรียงจากมากไปน้อย</p>
+    <div class="cat-chart-track" id="category-chart"></div>
+    <div class="cat-legend" id="category-legend"></div>
+    <div class="chart-empty" id="category-empty" hidden>ยังไม่มีรายการรายจ่ายในช่วงที่เลือก</div>
+  </section>
+
+  <section class="chart-card card">
+    <h2>แนวโน้มรายเดือน</h2>
+    <p class="chart-subtitle">รายรับ รายจ่าย และเงินเก็บสุทธิ ย้อนหลังสูงสุด 12 เดือน (ไม่ขึ้นกับตัวกรองเดือนด้านบน)</p>
+    <div class="trend-legend" id="trend-legend"></div>
+    <div class="trend-svg-wrap" id="trend-svg-wrap"></div>
+    <div class="chart-empty" id="trend-empty" hidden>ต้องมีข้อมูลอย่างน้อย 2 เดือนขึ้นไปจึงจะเห็นแนวโน้มได้</div>
+  </section>
+
+  <section class="form-card card">
+    <h2 id="form-title">เพิ่มรายการใหม่</h2>
+    <form id="entry-form">
+      <div class="type-toggle">
+        <button type="button" class="type-btn" data-type="expense">รายจ่าย</button>
+        <button type="button" class="type-btn" data-type="income">รายรับ</button>
+        <button type="button" class="type-btn" data-type="saving">เงินเก็บ</button>
+      </div>
+      <div class="direction-toggle" id="direction-toggle" hidden>
+        <button type="button" class="direction-btn" data-direction="in">ฝากเข้าเงินเก็บ</button>
+        <button type="button" class="direction-btn" data-direction="out">ถอนออกมาใช้</button>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="f-date">วันที่</label>
+          <input type="date" id="f-date" required>
+        </div>
+        <div class="field">
+          <label for="f-amount">จำนวนเงิน</label>
+          <div class="amount-wrap">
+            <span class="baht-sign">฿</span>
+            <input type="number" id="f-amount" min="0" step="0.01" placeholder="0.00" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-category">หมวดหมู่</label>
+          <input type="text" id="f-category" list="f-category-list" placeholder="เช่น ค่าอาหาร" required>
+          <datalist id="f-category-list"></datalist>
+        </div>
+        <div class="field">
+          <label for="f-note">บันทึกย่อ (ถ้ามี)</label>
+          <input type="text" id="f-note" placeholder="รายละเอียดเพิ่มเติม">
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="primary" id="submit-btn">บันทึกรายการ</button>
+        <button type="button" class="ghost" id="cancel-edit-btn" hidden>ยกเลิกการแก้ไข</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="list-card card">
+    <div class="list-header">
+      <h2>รายการทั้งหมด</h2>
+      <span class="list-count" id="list-count">0 รายการ</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>ประเภท</th>
+            <th>หมวดหมู่ / บันทึกย่อ</th>
+            <th class="num">จำนวนเงิน</th>
+            <th class="actions"></th>
+          </tr>
+        </thead>
+        <tbody id="tx-body"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="empty-state" hidden>ยังไม่มีรายการในช่วงที่เลือก ลองเพิ่มรายการแรกของคุณด้านบน</div>
+  </section>
+
+  <p class="app-footer">ข้อมูลถูกบันทึกไว้ในเบราว์เซอร์นี้โดยอัตโนมัติทุกครั้งที่มีการเปลี่ยนแปลง (ไม่ได้ส่งขึ้นเซิร์ฟเวอร์ที่ใด และไม่ซิงก์ข้ามอุปกรณ์)<br>แนะนำให้กด "ส่งออกข้อมูล" เก็บไฟล์สำรองไว้เป็นระยะ โดยเฉพาะก่อนล้างข้อมูลเบราว์เซอร์หรือเปลี่ยนเครื่อง</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "th-expense-tracker-v1";
+
+  var EXPENSE_CATEGORIES = ["ค่าอาหาร", "ค่าเดินทาง/น้ำมัน", "ค่าที่พัก/ผ่อนบ้าน", "ค่าสาธารณูปโภค", "การศึกษา/หนังสือ/อบรม", "ค่าใช้จ่ายส่วนตัว", "ค่าใช้จ่ายครอบครัว", "สุขภาพ", "อื่นๆ"];
+  var INCOME_CATEGORIES = ["เงินเดือน", "ค่าสอนพิเศษ/ติวเตอร์", "ค่าตอบแทนวิทยากร", "ทุนวิจัย/ทุนการศึกษา", "รายได้อื่นๆ"];
+  var SAVING_CATEGORIES = ["ออมทรัพย์ทั่วไป", "เงินสำรองฉุกเฉิน", "ออมเพื่อเกษียณ", "ออมตามเป้าหมาย (ท่องเที่ยว/การศึกษา)", "สหกรณ์ออมทรัพย์", "อื่นๆ"];
+  var WITHDRAW_CATEGORIES = ["ใช้จ่ายฉุกเฉิน", "ซื้อของตามเป้าหมายที่ตั้งไว้", "โอนกลับมาใช้จ่ายทั่วไป", "อื่นๆ"];
+  var THAI_MONTHS_FULL = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+  var THAI_MONTHS_ABBR = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+
+  var STATE = { transactions: [] };
+  var editingId = null;
+  var pendingDeleteId = null;
+  var pendingImportData = null;
+  var formType = "expense";
+  var formSavingDirection = "in";
+  var selectedMonth = null;
+
+  function storageAvailable() {
+    try {
+      var t = "__storage_test__";
+      localStorage.setItem(t, "1");
+      localStorage.removeItem(t);
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.transactions)) STATE = parsed;
+      }
+    } catch (e) { /* ignore corrupt/unavailable storage, keep default empty state */ }
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function todayISO() {
+    var d = new Date();
+    var m = String(d.getMonth() + 1).padStart(2, "0");
+    var day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function monthKey(iso) { return iso.slice(0, 7); }
+
+  function beYear(ceYear) { return ceYear + 543; }
+
+  function formatMonthLabel(key) {
+    if (key === "all") return "ทั้งหมด";
+    var parts = key.split("-");
+    var y = parseInt(parts[0], 10);
+    var m = parseInt(parts[1], 10) - 1;
+    return THAI_MONTHS_FULL[m] + " " + beYear(y);
+  }
+
+  function formatDateShort(iso) {
+    var parts = iso.split("-");
+    var y = parseInt(parts[0], 10);
+    var m = parseInt(parts[1], 10) - 1;
+    var d = parseInt(parts[2], 10);
+    return d + " " + THAI_MONTHS_ABBR[m] + " " + beYear(y);
+  }
+
+  function formatBaht(n) {
+    var sign = n < 0 ? "-" : "";
+    var abs = Math.abs(n);
+    var hasCents = Math.round(abs * 100) % 100 !== 0;
+    var formatted = abs.toLocaleString("th-TH", {
+      minimumFractionDigits: hasCents ? 2 : 0,
+      maximumFractionDigits: 2
+    });
+    return sign + "฿" + formatted;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function genId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function getAvailableMonths() {
+    var set = {};
+    STATE.transactions.forEach(function (t) { set[monthKey(t.date)] = true; });
+    set[monthKey(todayISO())] = true;
+    var keys = Object.keys(set);
+    keys.sort(function (a, b) { return a < b ? 1 : -1; });
+    return keys;
+  }
+
+  function setStatus(kind) {
+    var dot = document.getElementById("save-dot");
+    var text = document.getElementById("save-text");
+    dot.className = "save-dot";
+    if (kind === "saved") {
+      dot.classList.add("saved");
+      var now = new Date();
+      var hh = String(now.getHours()).padStart(2, "0");
+      var mm = String(now.getMinutes()).padStart(2, "0");
+      text.textContent = "บันทึกในเบราว์เซอร์นี้ล่าสุด " + hh + ":" + mm;
+    } else if (kind === "unavailable") {
+      dot.classList.add("unavailable");
+      text.textContent = "เบราว์เซอร์นี้ไม่รองรับการบันทึกอัตโนมัติ กรุณาส่งออกข้อมูลเก็บไว้เป็นระยะ";
+    } else if (kind === "error") {
+      dot.classList.add("error");
+      text.textContent = "บันทึกไม่สำเร็จ (พื้นที่จัดเก็บอาจเต็ม) กรุณาส่งออกข้อมูลสำรองไว้";
+    } else {
+      text.textContent = "พร้อมใช้งาน";
+    }
+  }
+
+  function updateCategoryList() {
+    var list = document.getElementById("f-category-list");
+    var cats;
+    if (formType === "income") cats = INCOME_CATEGORIES;
+    else if (formType === "saving") cats = formSavingDirection === "out" ? WITHDRAW_CATEGORIES : SAVING_CATEGORIES;
+    else cats = EXPENSE_CATEGORIES;
+    list.innerHTML = cats.map(function (c) { return '<option value="' + escapeHtml(c) + '"></option>'; }).join("");
+  }
+
+  function setSavingDirection(direction) {
+    formSavingDirection = direction;
+    document.querySelectorAll(".direction-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-direction") === direction);
+    });
+    updateCategoryList();
+  }
+
+  function setFormType(type) {
+    formType = type;
+    document.querySelectorAll(".type-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-type") === type);
+    });
+    var dirToggle = document.getElementById("direction-toggle");
+    if (type === "saving") {
+      dirToggle.hidden = false;
+      setSavingDirection(formSavingDirection);
+    } else {
+      dirToggle.hidden = true;
+      updateCategoryList();
+    }
+  }
+
+  function resetForm() {
+    editingId = null;
+    document.getElementById("entry-form").reset();
+    document.getElementById("f-date").value = todayISO();
+    formSavingDirection = "in";
+    setFormType("expense");
+    document.getElementById("form-title").textContent = "เพิ่มรายการใหม่";
+    document.getElementById("submit-btn").textContent = "บันทึกรายการ";
+    document.getElementById("cancel-edit-btn").hidden = true;
+  }
+
+  function beginEdit(id) {
+    var tx = STATE.transactions.find(function (t) { return t.id === id; });
+    if (!tx) return;
+    editingId = id;
+    pendingDeleteId = null;
+    document.getElementById("f-date").value = tx.date;
+    document.getElementById("f-amount").value = tx.amount;
+    setFormType(tx.type);
+    if (tx.type === "saving") setSavingDirection(tx.direction === "out" ? "out" : "in");
+    document.getElementById("f-category").value = tx.category;
+    document.getElementById("f-note").value = tx.note || "";
+    document.getElementById("form-title").textContent = "แก้ไขรายการ";
+    document.getElementById("submit-btn").textContent = "บันทึกการแก้ไข";
+    document.getElementById("cancel-edit-btn").hidden = false;
+    document.querySelector(".form-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function renderMonthSelect() {
+    var sel = document.getElementById("month-select");
+    var months = getAvailableMonths();
+    if (!selectedMonth) selectedMonth = months.length ? months[0] : monthKey(todayISO());
+    var options = months.map(function (k) {
+      return '<option value="' + k + '"' + (k === selectedMonth ? " selected" : "") + '>' + formatMonthLabel(k) + "</option>";
+    });
+    options.push('<option value="all"' + (selectedMonth === "all" ? " selected" : "") + ">ทั้งหมดทุกช่วงเวลา</option>");
+    sel.innerHTML = options.join("");
+  }
+
+  function filteredTransactions() {
+    var list = STATE.transactions.slice();
+    if (selectedMonth && selectedMonth !== "all") {
+      list = list.filter(function (t) { return monthKey(t.date) === selectedMonth; });
+    }
+    list.sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return a.id < b.id ? 1 : -1;
+    });
+    return list;
+  }
+
+  function renderSummary(list) {
+    var income = 0, expense = 0, savingIn = 0, savingOut = 0;
+    list.forEach(function (t) {
+      if (t.type === "income") income += t.amount;
+      else if (t.type === "saving") { if (t.direction === "out") savingOut += t.amount; else savingIn += t.amount; }
+      else expense += t.amount;
+    });
+    var savingNet = savingIn - savingOut;
+    var balance = income - expense - savingNet;
+    var savingTotal = 0;
+    STATE.transactions.forEach(function (t) {
+      if (t.type === "saving") savingTotal += t.direction === "out" ? -t.amount : t.amount;
+    });
+
+    document.getElementById("sum-income").textContent = formatBaht(income);
+    document.getElementById("sum-expense").textContent = formatBaht(expense);
+    document.getElementById("sum-saving-total").textContent = formatBaht(savingTotal);
+    var monthChangeText = savingNet > 0 ? ("+" + formatBaht(savingNet)) : (savingNet < 0 ? formatBaht(savingNet) : "±฿0");
+    document.getElementById("sum-saving-month").textContent = monthChangeText + " เดือนนี้";
+    var balEl = document.getElementById("sum-balance");
+    balEl.textContent = formatBaht(balance);
+    balEl.classList.toggle("negative", balance < 0);
+    balEl.classList.toggle("positive", balance >= 0);
+
+    var savingMagnitude = Math.abs(savingNet);
+    var total = income + expense + savingMagnitude;
+    var incomePct = total > 0 ? Math.round((income / total) * 100) : 34;
+    var expensePct = total > 0 ? Math.round((expense / total) * 100) : 33;
+    var savingPct = total > 0 ? Math.max(0, 100 - incomePct - expensePct) : 33;
+    document.getElementById("meter-income").style.width = incomePct + "%";
+    document.getElementById("meter-expense").style.width = expensePct + "%";
+    document.getElementById("meter-saving").style.width = savingPct + "%";
+    document.getElementById("meter-income-label").textContent = "รายรับ " + (total > 0 ? incomePct : 0) + "%";
+    document.getElementById("meter-expense-label").textContent = "รายจ่าย " + (total > 0 ? expensePct : 0) + "%";
+    document.getElementById("meter-saving-label").textContent = (savingNet < 0 ? "ถอนเงินเก็บ " : "เงินเก็บ ") + (total > 0 ? savingPct : 0) + "%";
+  }
+
+  function renderList(list) {
+    var body = document.getElementById("tx-body");
+    var empty = document.getElementById("empty-state");
+    document.getElementById("list-count").textContent = list.length + " รายการ";
+
+    if (list.length === 0) {
+      body.innerHTML = "";
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+
+    body.innerHTML = list.map(function (t) {
+      var actionsHtml;
+      if (pendingDeleteId === t.id) {
+        actionsHtml =
+          '<span class="row-actions">' +
+          '<button type="button" class="icon-btn" data-cancel-del="' + t.id + '">ยกเลิก</button>' +
+          '<button type="button" class="icon-btn confirm-yes" data-confirm-del="' + t.id + '">ยืนยันลบ</button>' +
+          "</span>";
+      } else {
+        actionsHtml =
+          '<span class="row-actions">' +
+          '<button type="button" class="icon-btn" data-edit="' + t.id + '">แก้ไข</button>' +
+          '<button type="button" class="icon-btn danger" data-del="' + t.id + '">ลบ</button>' +
+          "</span>";
+      }
+      var badgeClass = t.type === "income" ? "income" : (t.type === "saving" ? "saving" : "expense");
+      var badgeText = t.type === "income" ? "รายรับ" : (t.type === "saving" ? (t.direction === "out" ? "ถอนเงินเก็บ" : "ฝากเงินเก็บ") : "รายจ่าย");
+      var sign = (t.type === "income" || (t.type === "saving" && t.direction === "out")) ? "+" : "-";
+      return (
+        "<tr>" +
+        '<td>' + formatDateShort(t.date) + "</td>" +
+        '<td><span class="badge ' + badgeClass + '">' + badgeText + "</span></td>" +
+        "<td>" + escapeHtml(t.category) + (t.note ? '<div class="note-text">' + escapeHtml(t.note) + "</div>" : "") + "</td>" +
+        '<td class="num amount-cell ' + badgeClass + '">' + sign + formatBaht(t.amount).replace("-", "") + "</td>" +
+        '<td class="actions">' + actionsHtml + "</td>" +
+        "</tr>"
+      );
+    }).join("");
+  }
+
+  var CATEGORY_MAX_SLOTS = 7;
+
+  function categorySlotHash(name) {
+    var h = 0;
+    for (var i = 0; i < name.length; i++) { h = (h * 31 + name.charCodeAt(i)) >>> 0; }
+    return h % CATEGORY_MAX_SLOTS;
+  }
+
+  function renderCategoryChart(list) {
+    var sums = {};
+    list.forEach(function (t) {
+      if (t.type !== "expense") return;
+      var key = t.category && t.category.trim() ? t.category.trim() : "อื่นๆ";
+      sums[key] = (sums[key] || 0) + t.amount;
+    });
+    var entries = Object.keys(sums).map(function (k) { return { name: k, amount: sums[k] }; });
+    entries.sort(function (a, b) { return b.amount - a.amount; });
+
+    var main = entries.slice(0, CATEGORY_MAX_SLOTS);
+    var overflow = entries.slice(CATEGORY_MAX_SLOTS);
+    var otherAmount = overflow.reduce(function (s, e) { return s + e.amount; }, 0);
+    var otherIdx = -1;
+    main.forEach(function (e, i) { if (e.name === "อื่นๆ") otherIdx = i; });
+    if (otherIdx !== -1) {
+      otherAmount += main[otherIdx].amount;
+      main.splice(otherIdx, 1);
+    }
+    if (otherAmount > 0) main.push({ name: "อื่นๆ", amount: otherAmount, isOther: true });
+
+    var track = document.getElementById("category-chart");
+    var legend = document.getElementById("category-legend");
+    var empty = document.getElementById("category-empty");
+    var total = main.reduce(function (s, e) { return s + e.amount; }, 0);
+
+    if (total <= 0) {
+      track.innerHTML = "";
+      legend.innerHTML = "";
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+
+    var named = main.filter(function (e) { return !e.isOther; });
+    var byName = named.slice().sort(function (a, b) { return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0); });
+    var usedSlots = {};
+    var colorMap = {};
+    byName.forEach(function (e) {
+      var slot = categorySlotHash(e.name);
+      var tries = 0;
+      while (usedSlots[slot] && tries < CATEGORY_MAX_SLOTS) { slot = (slot + 1) % CATEGORY_MAX_SLOTS; tries++; }
+      usedSlots[slot] = true;
+      colorMap[e.name] = slot;
+    });
+
+    track.innerHTML = main.map(function (e) {
+      var pct = (e.amount / total) * 100;
+      var style = e.isOther ? "" : ("background:var(--series-" + (colorMap[e.name] + 1) + ");");
+      var cls = "cat-seg" + (e.isOther ? " cat-seg-other" : "");
+      var titleText = escapeHtml(e.name) + ": " + formatBaht(e.amount) + " (" + pct.toFixed(0) + "%)";
+      return '<div class="' + cls + '" style="flex:' + pct.toFixed(3) + ' 0 0;' + style + '" title="' + titleText + '"></div>';
+    }).join("");
+
+    legend.innerHTML = main.map(function (e) {
+      var pct = (e.amount / total) * 100;
+      var swatchStyle = e.isOther ? "" : ("background:var(--series-" + (colorMap[e.name] + 1) + ");");
+      var swatchCls = "cat-swatch" + (e.isOther ? " cat-swatch-other" : "");
+      return (
+        '<div class="cat-legend-row">' +
+        '<span class="' + swatchCls + '" style="' + swatchStyle + '"></span>' +
+        '<span class="cat-legend-name">' + escapeHtml(e.name) + "</span>" +
+        '<span class="cat-legend-amount">' + formatBaht(e.amount) + '<span class="cat-legend-pct"> · ' + pct.toFixed(0) + "%</span></span>" +
+        "</div>"
+      );
+    }).join("");
+  }
+
+  var TREND_MONTHS_MAX = 12;
+  var TREND_VIEW_W = 640;
+  var TREND_VIEW_H = 200;
+  var TREND_PAD = { left: 52, right: 10, top: 14, bottom: 26 };
+
+  function niceMax(value) {
+    if (value <= 0) return 100;
+    var magnitude = Math.pow(10, Math.floor(Math.log(value) / Math.LN10));
+    var residual = value / magnitude;
+    var niceResidual;
+    if (residual <= 1) niceResidual = 1;
+    else if (residual <= 2) niceResidual = 2;
+    else if (residual <= 5) niceResidual = 5;
+    else niceResidual = 10;
+    return niceResidual * magnitude;
+  }
+
+  function buildTrendMonths() {
+    var byMonth = {};
+    STATE.transactions.forEach(function (t) {
+      var key = monthKey(t.date);
+      if (!byMonth[key]) byMonth[key] = { income: 0, expense: 0, savingIn: 0, savingOut: 0 };
+      if (t.type === "income") byMonth[key].income += t.amount;
+      else if (t.type === "expense") byMonth[key].expense += t.amount;
+      else if (t.type === "saving") { if (t.direction === "out") byMonth[key].savingOut += t.amount; else byMonth[key].savingIn += t.amount; }
+    });
+    var keys = Object.keys(byMonth).sort();
+    keys = keys.slice(Math.max(0, keys.length - TREND_MONTHS_MAX));
+    return keys.map(function (k) {
+      var m = byMonth[k];
+      return { key: k, income: m.income, expense: m.expense, savingNet: m.savingIn - m.savingOut };
+    });
+  }
+
+  function trendMonthLabel(key, index, arr) {
+    var parts = key.split("-");
+    var y = parseInt(parts[0], 10);
+    var mIdx = parseInt(parts[1], 10) - 1;
+    var showYear = index === 0 || (index > 0 && parts[0] !== arr[index - 1].key.split("-")[0]);
+    return THAI_MONTHS_ABBR[mIdx] + (showYear ? " " + beYear(y) : "");
+  }
+
+  function renderTrendChart() {
+    var months = buildTrendMonths();
+    var wrap = document.getElementById("trend-svg-wrap");
+    var legendEl = document.getElementById("trend-legend");
+    var empty = document.getElementById("trend-empty");
+
+    legendEl.innerHTML =
+      '<span class="trend-legend-item"><span class="swatch-line" style="background:var(--series-3)"></span>รายรับ</span>' +
+      '<span class="trend-legend-item"><span class="swatch-line" style="background:var(--series-2)"></span>รายจ่าย</span>' +
+      '<span class="trend-legend-item"><span class="swatch-line" style="background:var(--series-1)"></span>เงินเก็บสุทธิ</span>';
+
+    if (months.length < 2) {
+      wrap.innerHTML = "";
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+
+    var maxVal = 0, minVal = 0;
+    months.forEach(function (m) {
+      maxVal = Math.max(maxVal, m.income, m.expense, m.savingNet);
+      minVal = Math.min(minVal, m.savingNet);
+    });
+    var yMax = niceMax(maxVal);
+    var yMin = minVal < 0 ? -niceMax(-minVal) : 0;
+    var innerW = TREND_VIEW_W - TREND_PAD.left - TREND_PAD.right;
+    var innerH = TREND_VIEW_H - TREND_PAD.top - TREND_PAD.bottom;
+
+    function xAt(i) {
+      return months.length === 1 ? TREND_PAD.left + innerW / 2 : TREND_PAD.left + (innerW * i) / (months.length - 1);
+    }
+    function yAt(v) {
+      var clamped = Math.max(yMin, Math.min(yMax, v));
+      return TREND_PAD.top + innerH - ((clamped - yMin) / (yMax - yMin)) * innerH;
+    }
+
+    var gridVals = yMin < 0 ? [yMax, 0, yMin] : [yMax, yMax / 2, 0];
+    var gridLines = gridVals.map(function (val) {
+      var y = yAt(val);
+      var lineCls = val === 0 && yMin < 0 ? "trend-gridline trend-zeroline" : "trend-gridline";
+      return (
+        '<line class="' + lineCls + '" x1="' + TREND_PAD.left + '" x2="' + (TREND_VIEW_W - TREND_PAD.right) + '" y1="' + y + '" y2="' + y + '"></line>' +
+        '<text class="trend-axis-label" x="' + (TREND_PAD.left - 6) + '" y="' + (y + 3) + '" text-anchor="end">' + formatBaht(val) + "</text>"
+      );
+    }).join("");
+
+    var xLabels = months.map(function (m, i) {
+      return '<text class="trend-axis-label" x="' + xAt(i) + '" y="' + (TREND_VIEW_H - 6) + '" text-anchor="middle">' + trendMonthLabel(m.key, i, months) + "</text>";
+    }).join("");
+
+    function seriesPath(getVal) {
+      return months.map(function (m, i) { return (i === 0 ? "M" : "L") + xAt(i) + "," + yAt(getVal(m)); }).join(" ");
+    }
+
+    var seriesDefs = [
+      { key: "income", label: "รายรับ", get: function (m) { return m.income; }, slot: 3 },
+      { key: "expense", label: "รายจ่าย", get: function (m) { return m.expense; }, slot: 2 },
+      { key: "savingNet", label: "เงินเก็บสุทธิ", get: function (m) { return m.savingNet; }, slot: 1 }
+    ];
+
+    var linesHtml = seriesDefs.map(function (s) {
+      var path = '<path class="trend-line" d="' + seriesPath(s.get) + '" style="stroke:var(--series-' + s.slot + ')"></path>';
+      var dots = months.map(function (m, i) {
+        return '<circle class="trend-dot" cx="' + xAt(i) + '" cy="' + yAt(s.get(m)) + '" r="4" style="fill:var(--series-' + s.slot + ')"></circle>';
+      }).join("");
+      var lastVal = s.get(months[months.length - 1]);
+      var endLabel = '<text class="trend-endlabel" x="' + (xAt(months.length - 1) + 8) + '" y="' + (yAt(lastVal) + 4) + '">' + formatBaht(lastVal) + "</text>";
+      return path + dots + endLabel;
+    }).join("");
+
+    wrap.innerHTML =
+      '<svg viewBox="0 0 ' + TREND_VIEW_W + ' ' + TREND_VIEW_H + '" id="trend-svg" preserveAspectRatio="xMidYMid meet">' +
+      gridLines + xLabels + linesHtml +
+      '<line class="trend-crosshair" id="trend-crosshair" x1="0" x2="0" y1="' + TREND_PAD.top + '" y2="' + (TREND_PAD.top + innerH) + '" style="display:none"></line>' +
+      '<rect class="trend-hit" x="' + TREND_PAD.left + '" y="' + TREND_PAD.top + '" width="' + innerW + '" height="' + innerH + '" id="trend-hit"></rect>' +
+      "</svg>" +
+      '<div class="trend-tooltip" id="trend-tooltip" hidden></div>';
+
+    var svgEl = document.getElementById("trend-svg");
+    var hitEl = document.getElementById("trend-hit");
+    var crosshair = document.getElementById("trend-crosshair");
+    var tooltip = document.getElementById("trend-tooltip");
+
+    function showAt(clientX) {
+      var rect = svgEl.getBoundingClientRect();
+      if (!rect.width) return;
+      var ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      var vx = ratio * TREND_VIEW_W;
+      var idx = Math.round(((vx - TREND_PAD.left) / innerW) * (months.length - 1));
+      idx = Math.max(0, Math.min(months.length - 1, idx));
+      var m = months[idx];
+      crosshair.setAttribute("x1", xAt(idx));
+      crosshair.setAttribute("x2", xAt(idx));
+      crosshair.style.display = "";
+      tooltip.hidden = false;
+      tooltip.innerHTML =
+        '<div class="tt-month">' + trendMonthLabel(m.key, idx, months) + "</div>" +
+        seriesDefs.map(function (s) {
+          return '<div class="tt-row"><span class="tt-dot" style="background:var(--series-' + s.slot + ')"></span>' + s.label + '<span class="tt-val">' + formatBaht(s.get(m)) + "</span></div>";
+        }).join("");
+      var px = rect.left + (xAt(idx) / TREND_VIEW_W) * rect.width;
+      var py = rect.top + (TREND_PAD.top / TREND_VIEW_H) * rect.height;
+      var wrapRect = wrap.getBoundingClientRect();
+      tooltip.style.left = (px - wrapRect.left) + "px";
+      tooltip.style.top = (py - wrapRect.top) + "px";
+    }
+
+    function hideTooltip() {
+      crosshair.style.display = "none";
+      tooltip.hidden = true;
+    }
+
+    hitEl.addEventListener("mousemove", function (e) { showAt(e.clientX); });
+    hitEl.addEventListener("mouseleave", hideTooltip);
+    hitEl.addEventListener("touchstart", function (e) { if (e.touches[0]) showAt(e.touches[0].clientX); }, { passive: true });
+    hitEl.addEventListener("touchmove", function (e) { if (e.touches[0]) showAt(e.touches[0].clientX); }, { passive: true });
+    hitEl.addEventListener("touchend", hideTooltip);
+  }
+
+  function renderAll() {
+    renderMonthSelect();
+    var list = filteredTransactions();
+    renderSummary(list);
+    renderList(list);
+    renderCategoryChart(list);
+    renderTrendChart();
+  }
+
+  function persist() {
+    renderAll();
+    setStatus(saveState() ? "saved" : "error");
+  }
+
+  function exportData() {
+    try {
+      var json = JSON.stringify(STATE, null, 2);
+      var blob = new Blob([json], { type: "application/json" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "บัญชีรายรับรายจ่าย-" + todayISO() + ".json";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    } catch (e) {
+      document.getElementById("import-banner-text").textContent = "ส่งออกข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้งหรือใช้เบราว์เซอร์อื่น";
+      document.getElementById("import-confirm-btn").hidden = true;
+      document.getElementById("import-banner").hidden = false;
+    }
+  }
+
+  function handleImportFile(file) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(String(reader.result));
+        if (!parsed || !Array.isArray(parsed.transactions)) throw new Error("invalid shape");
+        pendingImportData = parsed;
+        document.getElementById("import-banner-text").textContent =
+          "พบข้อมูล " + parsed.transactions.length + " รายการในไฟล์ การนำเข้าจะแทนที่ข้อมูลปัจจุบันทั้งหมด";
+        document.getElementById("import-banner").hidden = false;
+      } catch (e) {
+        document.getElementById("import-banner-text").textContent = "ไม่สามารถอ่านไฟล์นี้ได้ กรุณาเลือกไฟล์ .json ที่ส่งออกจากแอปนี้";
+        document.getElementById("import-banner").hidden = false;
+        pendingImportData = null;
+        document.getElementById("import-confirm-btn").hidden = true;
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    loadState();
+    document.getElementById("f-date").value = todayISO();
+    setFormType("expense");
+    renderAll();
+    setStatus(storageAvailable() ? "idle" : "unavailable");
+
+    document.querySelectorAll(".type-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () { setFormType(btn.getAttribute("data-type")); });
+    });
+
+    document.querySelectorAll(".direction-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () { setSavingDirection(btn.getAttribute("data-direction")); });
+    });
+
+    document.getElementById("month-select").addEventListener("change", function (e) {
+      selectedMonth = e.target.value;
+      renderAll();
+    });
+
+    document.getElementById("cancel-edit-btn").addEventListener("click", function () {
+      resetForm();
+    });
+
+    document.getElementById("entry-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      var date = document.getElementById("f-date").value;
+      var amount = parseFloat(document.getElementById("f-amount").value);
+      var category = document.getElementById("f-category").value.trim();
+      var note = document.getElementById("f-note").value.trim();
+      if (!date || !category || !(amount > 0)) return;
+
+      var direction = formType === "saving" ? formSavingDirection : undefined;
+      if (editingId) {
+        var tx = STATE.transactions.find(function (t) { return t.id === editingId; });
+        if (tx) {
+          tx.date = date; tx.amount = amount; tx.category = category; tx.note = note; tx.type = formType; tx.direction = direction;
+        }
+      } else {
+        STATE.transactions.push({ id: genId(), date: date, amount: amount, category: category, note: note, type: formType, direction: direction });
+      }
+      resetForm();
+      persist();
+    });
+
+    document.getElementById("tx-body").addEventListener("click", function (e) {
+      var editBtn = e.target.closest("[data-edit]");
+      var delBtn = e.target.closest("[data-del]");
+      var confirmBtn = e.target.closest("[data-confirm-del]");
+      var cancelBtn = e.target.closest("[data-cancel-del]");
+      if (editBtn) { beginEdit(editBtn.getAttribute("data-edit")); return; }
+      if (delBtn) {
+        pendingDeleteId = delBtn.getAttribute("data-del");
+        renderList(filteredTransactions());
+        return;
+      }
+      if (cancelBtn) {
+        pendingDeleteId = null;
+        renderList(filteredTransactions());
+        return;
+      }
+      if (confirmBtn) {
+        var id = confirmBtn.getAttribute("data-confirm-del");
+        STATE.transactions = STATE.transactions.filter(function (t) { return t.id !== id; });
+        pendingDeleteId = null;
+        if (editingId === id) resetForm();
+        persist();
+        return;
+      }
+    });
+
+    document.getElementById("export-btn").addEventListener("click", exportData);
+
+    document.getElementById("import-btn").addEventListener("click", function () {
+      document.getElementById("import-file").click();
+    });
+
+    document.getElementById("import-file").addEventListener("change", function (e) {
+      var file = e.target.files && e.target.files[0];
+      if (file) {
+        document.getElementById("import-confirm-btn").hidden = false;
+        handleImportFile(file);
+      }
+      e.target.value = "";
+    });
+
+    document.getElementById("import-confirm-btn").addEventListener("click", function () {
+      if (pendingImportData) {
+        STATE = pendingImportData;
+        pendingImportData = null;
+        selectedMonth = null;
+        document.getElementById("import-banner").hidden = true;
+        persist();
+      }
+    });
+
+    document.getElementById("import-cancel-btn").addEventListener("click", function () {
+      pendingImportData = null;
+      document.getElementById("import-banner").hidden = true;
+    });
+  });
+})();
+</script>
+</body>
+</html>
